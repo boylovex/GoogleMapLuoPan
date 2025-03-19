@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Google Map 羅盤設定</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+    }
+    h1 {
+      color: #333;
+      font-size: 24px;
+    }
+    .option-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .preview {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px dashed #ccc;
+      text-align: center;
+      background: #eee;
+    }
+    .preview img {
+      max-width: 300px;
+      max-height: 300px;
+    }
+    button {
+      padding: 8px 15px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      display: none;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+  <h1>Google Map 羅盤設定</h1>
+
+  <div class="option-group">
+    <label for="customImage">自定義羅盤圖片:</label>
+    <input type="file" id="customImage" accept="image/png,image/jpeg,image/gif">
+    <div class="preview">
+      <p>圖片預覽：</p>
+      <img id="imagePreview" src="LuoPan.png" alt="羅盤圖片預覽" style="max-width: 300px;">
+    </div>
+  </div>
+
+  <div class="option-group">
+    <label for="useDefault">使用預設圖片：</label>
+    <button id="useDefault">恢復預設圖片</button>
+  </div>
+
+  <button id="saveButton">儲存設定</button>
+  <div id="statusMessage" class="status"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>

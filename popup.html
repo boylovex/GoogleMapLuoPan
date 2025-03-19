@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Google Map 羅盤</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      font-size: 18px;
+      color: #333;
+      margin-top: 0;
+    }
+    ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .commands {
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    .settings-link {
+      display: block;
+      margin-top: 15px;
+      text-align: right;
+      color: #4285f4;
+      text-decoration: none;
+    }
+    .settings-link:hover {
+      text-decoration: underline;
+    }
+    .toggle-button {
+      margin-left: 10px;
+      padding: 2px 8px;
+      border: 1px solid #4285f4;
+      background-color: #fff;
+      color: #4285f4;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .toggle-button:hover {
+      background-color: #4285f4;
+      color: #fff;
+    }
+    .control-button {
+      margin-left: 10px;
+      padding: 2px 8px;
+      border: 1px solid #4285f4;
+      background-color: #fff;
+      color: #4285f4;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .control-button:hover {
+      background-color: #4285f4;
+      color: #fff;
+    }
+    .button-group {
+      margin-left: 10px;
+      display: inline-flex;
+      gap: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Google Map 羅盤</h1>
+  <strong>快捷鍵若無反應，請將輸入法切為英文輸入</strong>
+  <p>擴充功能已啟動。在 Google 地圖上拖曳和縮放羅盤。</p>
+  
+  <div class="commands">
+    <strong>羅盤控制快捷鍵</strong>
+    <ul>
+      <li>顯示/隱藏 - V 鍵 <button id="toggleButton" class="control-button">切換顯示</button></li>
+      <li>羅盤左旋 (5度) - Q 鍵 
+        <div class="button-group">
+          <button id="rotateLuopanLeft5" class="control-button">左轉 5°</button>
+          <button id="rotateLuopanRight5" class="control-button">右轉 5°</button>
+        </div>
+      </li>
+      <li>羅盤左旋/右旋 (1度) - W/R 鍵
+        <div class="button-group">
+          <button id="rotateLuopanLeft1" class="control-button">左轉 1°</button>
+          <button id="rotateLuopanRight1" class="control-button">右轉 1°</button>
+        </div>
+      </li>
+      <li>藍線左旋/右旋 (5度) - A/D 鍵
+        <div class="button-group">
+          <button id="rotateBlueLeft5" class="control-button">左轉 5°</button>
+          <button id="rotateBlueRight5" class="control-button">右轉 5°</button>
+        </div>
+      </li>
+      <li>藍線左旋/右旋 (1度) - S/F 鍵
+        <div class="button-group">
+          <button id="rotateBlueLeft1" class="control-button">左轉 1°</button>
+          <button id="rotateBlueRight1" class="control-button">右轉 1°</button>
+        </div>
+      </li>
+      <li>透明度控制 - O/P 鍵
+        <div class="button-group">
+          <button id="increaseOpacity" class="control-button">提高</button>
+          <button id="decreaseOpacity" class="control-button">降低</button>
+        </div>
+      </li>
+      <li>清除所有畫線 - C 鍵 <button id="clearLines" class="control-button">清除畫線</button></li>
+      <li>畫線 - Ctrl + 滑鼠拖曳</li>
+      <li>移動羅盤 - 方向鍵 (1像素)</li>
+      <li>拖曳 - 滑鼠拖曳</li>
+      <li>縮放 - 滾輪
+        <div class="button-group">
+          <button id="zoomIn" class="control-button">放大</button>
+          <button id="zoomOut" class="control-button">縮小</button>
+        </div>
+      </li>
+    </ul>
+  </div>
+  
+  <a href="#" id="openSettings" class="settings-link">自訂羅盤圖片</a>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
