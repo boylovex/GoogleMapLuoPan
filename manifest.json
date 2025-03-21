@@ -17,18 +17,15 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content.js"
-      ]
+      "matches": ["*://*.google.com/maps/*"],
+      "js": ["eventHandler.js", "content.js"]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
-        "LuoPan.png"
+        "LuoPan.png",
+        "eventHandler.js"
       ],
       "matches": [
         "<all_urls>"

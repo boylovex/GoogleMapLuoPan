@@ -225,533 +225,55 @@ window.addEventListener('load', () => {
     }
   }, true);
   
-  // 應用羅盤旋轉
-  function applyRotation() {
-    overlay.style.transform = `rotate(${currentRotation}deg)`;
-    blackLineContainer.style.transform = `rotate(${currentRotation}deg)`;
-    debug(`羅盤和黑色十字線旋轉至: ${currentRotation} 度`);
-  }
-  
-  // 旋轉羅盤
-  function rotateOverlay(degrees) {
-    currentRotation = (currentRotation + degrees) % 360;
-    if (currentRotation < 0) currentRotation += 360;
-    applyRotation();
-    debug(`旋轉羅盤，當前角度: ${currentRotation}`);
-  }
-  
-  // 應用藍色十字線的旋轉
-  function applyBlueLineRotation() {
-    blueLineContainer.style.transform = `rotate(${blueLineRotation}deg)`;
-    debug(`藍色十字線旋轉至: ${blueLineRotation} 度`);
-  }
-  
-  // 旋轉藍色十字線
-  function rotateBlueLines(degrees) {
-    blueLineRotation = (blueLineRotation + degrees) % 360;
-    if (blueLineRotation < 0) blueLineRotation += 360;
-    applyBlueLineRotation();
-    debug(`旋轉藍線，當前角度: ${blueLineRotation}`);
-  }
-  
-  // 調整透明度
-  function adjustOpacity(delta) {
-    currentOpacity = Math.max(0.1, Math.min(1.0, currentOpacity + delta));
-    overlay.style.opacity = currentOpacity.toString();
-    debug(`圖片透明度設為: ${currentOpacity}`);
-  }
-  
-  // 切換疊加層顯示/隱藏
-  function toggleVisibility() {
-    isVisible = !isVisible;
-    container.style.display = isVisible ? 'block' : 'none';
-    
-    if (isVisible) {
-      // 確保在顯示時立即獲得焦點
-      setTimeout(() => {
-        container.focus({ preventScroll: true });
-        debug('羅盤顯示並取得焦點');
-      }, 0);
-      setupMutationObserver();
-    }
-    
-    // 發送狀態更新到 background script
-    chrome.runtime.sendMessage({ 
-      action: 'visibilityChanged', 
-      isVisible: isVisible 
-    });
-    
-    debug(`圖片顯示狀態: ${isVisible ? '顯示' : '隱藏'}`);
-  }
+  // 建立事件處理器實例 (使用全域變數)
+  const eventHandler = new window.LuopanEventHandler(
+    container,
+    overlay,
+    blackLineContainer,
+    blueLineContainer
+  );
 
-  // 建立 MutationObserver 來監視 DOM 變更
-  function setupMutationObserver() {
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList' || mutation.type === 'attributes') {
-          // 確保羅盤容器仍然可見且位於最上層
-          if (container.style.display === 'block') {
-            container.style.zIndex = '2147483647';
-            chrome.runtime.sendMessage({ 
-              action: 'visibilityChanged', 
-              isVisible: true 
-            });
-          }
-        }
-      }
-    });
+  // 移除原有的事件處理相關程式碼，改用 eventHandler
 
-    // 開始監視整個文件的變更
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class']
-    });
-  }
-
-  // 在初始化時設定觀察者
-  if (isVisible) {
-    setupMutationObserver();
-  }
-
-  // 清除所有線條的函式
-  function clearAllLines() {
-    while (lines.length > 0) {
-      const line = lines.pop();
-      if (line && line.parentNode) {
-        line.parentNode.removeChild(line);
-      }
-    }
-    debug('所有線條已清除');
-  }
-  
-  // 設定拖曳功能 - 加入對 Ctrl 鍵的檢查
-  container.addEventListener('mousedown', function(e) {
-    debug(`滑鼠按下在羅盤上，Ctrl=${isCtrlPressed}`);
-    
-    if (isCtrlPressed) {
-      // 按下 Ctrl 時執行畫線邏輯
-      isDrawingLine = true;
-      isDragging = false;
-      
-      // 計算相對於羅盤容器的座標
-      const rect = container.getBoundingClientRect();
-      startX = e.clientX - rect.left;
-      startY = e.clientY - rect.top;
-      
-      // 建立新線條元素
-      currentLine = document.createElement('div');
-      currentLine.style.position = 'absolute';
-      currentLine.style.backgroundColor = 'red';
-      currentLine.style.height = '2px';
-      currentLine.style.transformOrigin = '0 0';
-      currentLine.style.zIndex = '10001';
-      
-      // 設置起始位置 - 相對於容器
-      currentLine.style.left = startX + 'px';
-      currentLine.style.top = startY + 'px';
-      
-      // 添加到線條容器
-      linesContainer.appendChild(currentLine);
-      
-      e.preventDefault();
-      e.stopPropagation(); // 阻止事件冒泡
-    } else {
-      // 沒有按 Ctrl 時執行羅盤拖曳邏輯
-      isDragging = true;
-      isDrawingLine = false;
-      offsetX = e.clientX - container.offsetLeft;
-      offsetY = e.clientY - container.offsetTop;
-      container.style.cursor = 'grabbing';
-      e.preventDefault();
-    }
-  }, true);
-  
-  // 滑鼠移動事件
-  document.addEventListener('mousemove', function(e) {
-    // 畫線邏輯
-    if (isDrawingLine && currentLine && isCtrlPressed) {
-      const rect = container.getBoundingClientRect();
-      const currentX = e.clientX - rect.left;
-      const currentY = e.clientY - rect.top;
-      
-      // 計算線條長度和角度
-      const dx = currentX - startX;
-      const dy = currentY - startY;
-      const length = Math.sqrt(dx * dx + dy * dy);
-      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-      
-      // 應用線條屬性
-      currentLine.style.width = length + 'px';
-      currentLine.style.transform = `rotate(${angle}deg)`;
-      
-      e.stopPropagation();
-    }
-    
-    // 拖曳邏輯
-    if (isDragging && !isDrawingLine) {
-      let x = e.clientX - offsetX;
-      let y = e.clientY - offsetY;
-      container.style.left = x + 'px';
-      container.style.top = y + 'px';
-    }
-  }, true);
-  
-  // 滑鼠釋放完成線條或拖曳
-  document.addEventListener('mouseup', function(e) {
-    // 完成線條繪製
-    if (isDrawingLine && currentLine) {
-      lines.push(currentLine);
-      debug('線條完成繪製');
-      isDrawingLine = false;
-      currentLine = null;
-    }
-    
-    // 結束拖曳
-    if (isDragging) {
-      isDragging = false;
-      container.style.cursor = 'move';
-    }
-  }, true);
-  
-  // 修復滾輪縮放功能
-  container.addEventListener('wheel', function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    // 獲取容器的當前尺寸和位置
-    const rect = container.getBoundingClientRect();
-    const currentWidth = rect.width;
-    const currentHeight = rect.height;
-    
-    // 計算容器的中心點在頁面中的位置
-    const centerX = rect.left + currentWidth / 2;
-    const centerY = rect.top + currentHeight / 2;
-    
-    // 計算縮放比例
-    const scale = e.deltaY > 0 ? 0.9 : 1.1;
-    
-    // 計算新尺寸
-    const newWidth = Math.round(currentWidth * scale);
-    const newHeight = Math.round(currentHeight * scale);
-    
-    // 計算新的位置，以保持中心點不變
-    const newLeft = centerX - newWidth / 2;
-    const newTop = centerY - newHeight / 2;
-    
-    // 設定新尺寸和位置
-    container.style.width = newWidth + 'px';
-    container.style.height = newHeight + 'px';
-    container.style.left = newLeft + 'px';
-    container.style.top = newTop + 'px';
-    
-    return false;
-  }, { passive: false, capture: true });
-  
-  // 重新實作鍵盤事件處理 - 針對字母按鍵特別處理
-  function handleKeyDown(e) { 
-    // 檢查焦點元素
-    const isInputElement = document.activeElement.tagName === 'INPUT' || 
-                          document.activeElement.tagName === 'TEXTAREA' || 
-                          document.activeElement.isContentEditable;
-
-    debug(`按鍵按下: ${e.key}, Alt=${e.altKey}, Ctrl=${e.ctrlKey}, Shift=${e.shiftKey}`);                          
-
-    // 如果按下其他修飸鍵，不處理事件
-    if (e.altKey || e.shiftKey || e.ctrlKey) {
-      debug("偵測到修飾鍵，略過處理");
-      return;
-    }
-
-    // 如果羅盤隱藏且不是 V 鍵，忽略
-    if (!isVisible && e.key.toLowerCase() !== 'v') {
-      debug("羅盤隱藏中，忽略按鍵");
-      return;
-    }
-    
-    // 在輸入元素中時，只處理 V 鍵
-    if (isInputElement) {
-      debug("焦點在輸入元素上，略過字母按鍵處理");
-      return;
-    }
-
-    // 更強力的按鍵處理 - 使用 switch 而非 if-else 鏈
-    switch (e.key.toLowerCase()) {
-      // 羵盤旋轉鍵
-      case 'q':
-        debug("Q鍵被按下，嘗試左旋羅盤 5 度");
-        rotateOverlay(-5);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'e':
-        debug("E鍵被按下，嘗試右旋羅盤 5 度");
-        rotateOverlay(5);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'w':
-        debug("W鍵被按下，嘗試左旋羅盤 1 度");
-        rotateOverlay(-1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'r':
-        debug("R鍵被按下，嘗試右旋羅盤 1 度");
-        rotateOverlay(1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      
-      // 藍色十字線旋轉鍵
-      case 'a':
-        debug("A鍵被按下，藍色十字線左旋 5 度");
-        rotateBlueLines(-5);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'd':
-        debug("D鍵被按下，藍色十字線右旋 5 度");
-        rotateBlueLines(5);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 's':
-        debug("S鍵被按下，藍色十字線左旋 1 度");
-        rotateBlueLines(-1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'f':
-        debug("F鍵被按下，藍色十字線右旋 1 度");
-        rotateBlueLines(1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      
-      // 透明度控制鍵
-      case 'o':
-        debug("O鍵被按下，提高透明度");
-        adjustOpacity(0.1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'p':
-        debug("P鍵被按下，降低透明度");
-        adjustOpacity(-0.1);
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      
-      // 顯示/隱藏控制鍵
-      case 'v':
-        debug("V鍵被按下，切換顯示/隱藏");
-        toggleVisibility();
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      
-      // 清除線條鍵
-      case 'c':
-        debug("C鍵被按下，清除所有線條");
-        clearAllLines();
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-
-      // 方向鍵處理
-      case 'arrowleft':
-        const leftPos = parseInt(container.style.left) || 0;
-        container.style.left = (leftPos - 1) + 'px';
-        debug('羅盤向左移動一像素');
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'arrowright':
-        const rightPos = parseInt(container.style.left) || 0;
-        container.style.left = (rightPos + 1) + 'px';
-        debug('羅盤向右移動一像素');
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'arrowup':
-        const topPos = parseInt(container.style.top) || 0;
-        container.style.top = (topPos - 1) + 'px';
-        debug('羅盤向上移動一像素');
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'arrowdown':
-        const bottomPos = parseInt(container.style.top) || 0;
-        container.style.top = (bottomPos + 1) + 'px';
-        debug('羅盤向下移動一像素');
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      
-      default:
-        // 不處理其他按鍵
-        break;
-    }
-  }
-
-  // 移除所有現有的鍵盤事件監聽器
-  document.removeEventListener('keydown', handleKeyDown, true);
-  window.removeEventListener('keydown', handleKeyDown, true);
-  
-  // 同時在 document 和 window 層級添加事件監聽器，使用捕獲階段
-  document.addEventListener('keydown', handleKeyDown, true);
-  window.addEventListener('keydown', handleKeyDown, true);
-  
-  // 添加點擊事件來確保羅盤可以取得焦點
-  container.addEventListener('mousedown', function(e) {    
-    // 使用 setTimeout 確保在點擊事件完成後才執行焦點獲取
-    setTimeout(() => {
-      container.focus({ preventScroll: true });
-      debug('羅盤已取得焦點');
-    }, 50);
-    
-    // 如果正在按 Ctrl 繪製線條，不要執行後續程式碼
-    if (isCtrlPressed) return;
-
-    // 執行拖曳邏輯
-    if (!isCtrlPressed) {
-      isDragging = true;
-      isDrawingLine = false;
-      offsetX = e.clientX - container.offsetLeft;
-      offsetY = e.clientY - container.offsetTop;
-      container.style.cursor = 'grabbing';
-      e.preventDefault();
-    }
-  }, true);
-  
-  // 監聽焦點狀態變化，當羅盤失去焦點時，顯示提示
-  container.addEventListener('blur', function() {
-    debug('羅盤已失去焦點');
-    
-    // 可選：顯示小提示，提醒用戶點擊羅盤以啟用快捷鍵
-    const focusReminder = document.createElement('div');
-    focusReminder.style.position = 'absolute';
-    focusReminder.style.top = '-30px';
-    focusReminder.style.left = '0';
-    focusReminder.style.backgroundColor = 'rgba(255, 204, 0, 0.8)';
-    focusReminder.style.padding = '3px 8px';
-    focusReminder.style.borderRadius = '3px';
-    focusReminder.style.fontSize = '12px';
-    focusReminder.style.whiteSpace = 'nowrap';
-    focusReminder.textContent = '點擊羅盤以啟用快捷鍵';
-    focusReminder.style.zIndex = '2147483647';
-    focusReminder.style.pointerEvents = 'none';
-    
-    container.appendChild(focusReminder);
-    
-    // 3秒後自動移除提示
-    setTimeout(() => {
-      if (focusReminder.parentNode === container) {
-        container.removeChild(focusReminder);
-      }
-    }, 3000);
-  });
-  
-  // 添加全域按鍵處理，即使羅盤沒有焦點也能響應部分按鍵
-  function handleGlobalKeyDown(e) {
-    // 如果羅盤隱藏了，忽略按鍵
-    if (container.style.display === 'none') return;
-    
-    // 點擊 V 鍵時總是顯示羅盤（即使羅盤沒有焦點）
-    if ((e.key === 'v' || e.key === 'V') && !isInputElement(document.activeElement)) {
-      debug("V 鍵被按下，嘗試顯示羅盤");
-      if (!isVisible) {
-        toggleVisibility();
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // 顯示後自動聚焦到羅盤
-        setTimeout(() => container.focus({ preventScroll: true }), 50);
-      }
-    }
-  }
-  
-  // 檢查元素是否為輸入元素
-  function isInputElement(element) {
-    if (!element) return false;
-    return element.tagName === 'INPUT' || 
-           element.tagName === 'TEXTAREA' || 
-           element.isContentEditable;
-  }
-  
-  // 添加全域鍵盤事件
-  window.addEventListener('keydown', handleGlobalKeyDown, true);
-  
-  // 應用初始焦點
-  setTimeout(() => {
-    container.focus({ preventScroll: true });
-    debug('羅盤初始焦點已設置');
-  }, 500);
-  
-  // 處理縮放功能
-  function handleZoom(scale) {
-    // 獲取容器的當前尺寸和位置
-    const rect = container.getBoundingClientRect();
-    const currentWidth = rect.width;
-    const currentHeight = rect.height;
-    
-    // 計算容器的中心點在頁面中的位置
-    const centerX = rect.left + currentWidth / 2;
-    const centerY = rect.top + currentHeight / 2;
-    
-    // 計算新尺寸
-    const newWidth = Math.round(currentWidth * scale);
-    const newHeight = Math.round(currentHeight * scale);
-    
-    // 計算新的位置，以保持中心點不變
-    const newLeft = centerX - newWidth / 2;
-    const newTop = centerY - newHeight / 2;
-    
-    // 設定新尺寸和位置
-    container.style.width = newWidth + 'px';
-    container.style.height = newHeight + 'px';
-    container.style.left = newLeft + 'px';
-    container.style.top = newTop + 'px';
-  }
-
-  // 修改監聽來自 popup 的訊息處理機制
+  // 修改訊息監聽處理
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     debug('收到訊息:', request);
     try {
       switch (request.action) {
         case 'getVisibility':
-          sendResponse({ success: true, isVisible: isVisible });
+          sendResponse({ success: true, isVisible: eventHandler.isVisible });
           break;
         case 'toggleVisibility':
-          toggleVisibility();
-          // 在切換顯示狀態後，發送更新狀態的訊息到所有監聽者
-          chrome.runtime.sendMessage({ action: 'visibilityChanged', isVisible: isVisible });
+          eventHandler.toggleVisibility();
           sendResponse({ success: true });
           break;
         case 'rotateLuopan':
-          rotateOverlay(request.degrees);
+          eventHandler.rotateOverlay(request.degrees);
+          sendResponse({ success: true });
           break;
         case 'rotateBlueLines':
-          rotateBlueLines(request.degrees);
+          eventHandler.rotateBlueLines(request.degrees);
+          sendResponse({ success: true });
           break;
         case 'adjustOpacity':
-          adjustOpacity(request.delta);
+          eventHandler.adjustOpacity(request.delta);
+          sendResponse({ success: true });
           break;
         case 'clearAllLines':
-          clearAllLines();
+          eventHandler.clearAllLines();
+          sendResponse({ success: true });
           break;
         case 'zoomLuoPan':
-          handleZoom(request.scale);
+          const rect = container.getBoundingClientRect();
+          eventHandler.handleZoom(request.scale, rect);
+          sendResponse({ success: true });
           break;
       }
-      sendResponse({ success: true });
     } catch (error) {
       console.error('執行操作失敗:', error);
       sendResponse({ success: false, error: error.message });
     }
-    return true; // 保持通道開啟以進行非同步回應
+    return true;
   });
 
   // 通知 background.js 擴充功能已就緒
