@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Google Map 羅盤",
+  "name": "風水羅盤套圖",
   "version": "1.0",
-  "description": "在 Google 地圖上疊加可拖曳和縮放的 PNG 圖片。",
+  "description": "在任何網站上（如GoogleMap 或賣房網上的格局圖）疊加可拖曳和縮放的 PNG 圖片。",
   "permissions": [
     "activeTab",
     "scripting",
@@ -10,7 +10,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Google Map 羅盤"
+    "default_title": "風水羅盤套圖"
   },
   "background": {
     "service_worker": "background.js"

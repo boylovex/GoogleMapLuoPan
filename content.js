@@ -31,26 +31,37 @@ window.addEventListener('load', () => {
   
   // 建立一個容器來同時包含圖片和十字線
   const container = document.createElement('div');
-  container.style.position = 'absolute';
+  container.style.position = 'fixed'; // 改為 fixed 定位，相對於視窗
   container.style.display = isVisible ? 'block' : 'none';
   
   // 計算瀏覽器視窗的中心點，並設定羅盤初始位置
-  const initialWidth = 200; // 羵盤初始寬度
+  const initialWidth = 200; // 羅盤初始寬度
   const initialHeight = 200; // 羵盤初始高度
   
-  // 計算畫面中間位置
-  const centerX = Math.max(0, (window.innerWidth - initialWidth) / 2);
-  const centerY = Math.max(0, (window.innerHeight - initialHeight) / 2);
+  // 計算畫面中間位置（改為使用 viewport 尺寸）
+  function updatePosition() {
+    // 使用 clientWidth 和 clientHeight 來獲取可視區域大小
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    
+    const centerX = Math.max(0, (viewportWidth - initialWidth) / 2);
+    const centerY = Math.max(0, (viewportHeight - initialHeight) / 2);
+    
+    container.style.top = centerY + 'px';
+    container.style.left = centerX + 'px';
+  }
   
   // 設定羅盤位於畫面中間
-  container.style.top = centerY + 'px';
-  container.style.left = centerX + 'px';
-  container.style.zIndex = '9999';
+  updatePosition();
+  container.style.zIndex = '2147483647';
   container.style.width = initialWidth + 'px';
   container.style.height = initialHeight + 'px';
   container.style.cursor = 'move';
   container.id = 'luopanContainer';
-  
+
+  // 監聽視窗大小變更，重新計算位置
+  window.addEventListener('resize', updatePosition);
+
   // 設置 overlay 圖片
   let overlay = document.createElement('img');
   
@@ -87,7 +98,7 @@ window.addEventListener('load', () => {
   horizontalLine.style.top = '50%';
   horizontalLine.style.left = '0';
   horizontalLine.style.transform = 'translateY(-50%)';
-  horizontalLine.style.zIndex = '10000';
+  horizontalLine.style.zIndex = '2147483646';
   horizontalLine.style.pointerEvents = 'none';
   
   // 建立垂直線（黑色）
@@ -99,7 +110,7 @@ window.addEventListener('load', () => {
   verticalLine.style.top = '0';
   verticalLine.style.left = '50%';
   verticalLine.style.transform = 'translateX(-50%)';
-  verticalLine.style.zIndex = '10000';
+  verticalLine.style.zIndex = '2147483646';
   verticalLine.style.pointerEvents = 'none';
 
   // 建立藍色十字線容器
@@ -111,7 +122,7 @@ window.addEventListener('load', () => {
   blueLineContainer.style.top = '0';
   blueLineContainer.style.left = '0';
   blueLineContainer.style.pointerEvents = 'none';
-  blueLineContainer.style.zIndex = '10002';
+  blueLineContainer.style.zIndex = '2147483645';
   
   // 建立水平藍線
   const blueHorizontalLine = document.createElement('div');
@@ -153,7 +164,7 @@ window.addEventListener('load', () => {
   linesContainer.style.width = '100%';
   linesContainer.style.height = '100%';
   linesContainer.style.pointerEvents = 'none';
-  linesContainer.style.zIndex = '10001';
+  linesContainer.style.zIndex = '2147483644';
   container.appendChild(linesContainer);
   
   // 跟踪狀態
@@ -235,9 +246,52 @@ window.addEventListener('load', () => {
   function toggleVisibility() {
     isVisible = !isVisible;
     container.style.display = isVisible ? 'block' : 'none';
+    
+    // 發送狀態更新到 background script
+    chrome.runtime.sendMessage({ 
+      action: 'visibilityChanged', 
+      isVisible: isVisible 
+    });
+    
+    // 設定 MutationObserver 來監視 DOM 變更
+    if (isVisible) {
+      setupMutationObserver();
+    }
+    
     debug(`圖片顯示狀態: ${isVisible ? '顯示' : '隱藏'}`);
   }
-  
+
+  // 建立 MutationObserver 來監視 DOM 變更
+  function setupMutationObserver() {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' || mutation.type === 'attributes') {
+          // 確保羅盤容器仍然可見且位於最上層
+          if (container.style.display === 'block') {
+            container.style.zIndex = '2147483647';
+            chrome.runtime.sendMessage({ 
+              action: 'visibilityChanged', 
+              isVisible: true 
+            });
+          }
+        }
+      }
+    });
+
+    // 開始監視整個文件的變更
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class']
+    });
+  }
+
+  // 在初始化時設定觀察者
+  if (isVisible) {
+    setupMutationObserver();
+  }
+
   // 清除所有線條的函式
   function clearAllLines() {
     while (lines.length > 0) {
@@ -520,96 +574,6 @@ window.addEventListener('load', () => {
   document.addEventListener('keydown', handleKeyDown, true);
   window.addEventListener('keydown', handleKeyDown, true);
   
-  // 添加全局焦點監聽，確保我們能追蹤焦點變化
-  document.addEventListener('focus', function(e) {
-    debug('焦點切換到元素:', e.target.tagName, e.target);
-  }, true);
-
-  // 建立按鍵功能提示元素
-  const tooltip = document.createElement('div');
-  tooltip.style.position = 'absolute';
-  tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-  tooltip.style.color = 'white';
-  tooltip.style.padding = '10px';
-  tooltip.style.borderRadius = '5px';
-  tooltip.style.fontSize = '12px';
-  tooltip.style.zIndex = '10000';
-  tooltip.style.maxWidth = '300px';
-  tooltip.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
-  tooltip.style.display = 'none';
-  tooltip.style.pointerEvents = 'none';
-  
-  // 設定提示內容
-  tooltip.innerHTML = `
-    <strong>羅盤控制快捷鍵</strong><br>
-    <strong>快捷鍵若無反應，請將輸入法切為英文輸入</strong><br>
-    <ul style="margin: 5px 0; padding-left: 20px;">
-      <li>拖曳 - 滑鼠拖曳</li>
-      <li>縮放 - 滑鼠滾輪</li>
-      <li>羅盤左旋 (5度) - Q 鍵</li>
-      <li>羅盤右旋 (5度) - E 鍵</li>
-      <li>羅盤左旋 (1度) - W 鍵</li>
-      <li>羅盤右旋 (1度) - R 鍵</li>
-      <li>藍線左旋 (5度) - A 鍵</li>
-      <li>藍線右旋 (5度) - D 鍵</li>
-      <li>藍線左旋 (1度) - S 鍵</li>
-      <li>藍線右旋 (1度) - F 鍵</li>
-      <li>提高透明度 - O 鍵</li>
-      <li>降低透明度 - P 鍵</li>
-      <li>顯示/隱藏 - V 鍵</li>
-      <li>畫線 - Ctrl + 滑鼠拖曳</li>
-      <li>清除所有線條 - C 鍵</li>
-      <li>移動羅盤 - 方向鍵 (1像素)</li>
-    </ul>
-  `;
-  
-  // 將提示元素添加到頁面
-  document.body.appendChild(tooltip);
-  
-  // 設定工具提示顯示計時器
-  let tooltipTimer = null;
-  
-  // 顯示工具提示，5秒後自動隱藏
-  function showTooltip(e) {
-    if (tooltipTimer) {
-      clearTimeout(tooltipTimer);
-      tooltipTimer = null;
-    }
-    
-    tooltip.style.left = (e.clientX + 15) + 'px';
-    tooltip.style.top = (e.clientY + 15) + 'px';
-    tooltip.style.display = 'block';
-    
-    tooltipTimer = setTimeout(() => {
-      tooltip.style.display = 'none';
-      tooltipTimer = null;
-    }, 5000);
-  }
-  
-  // 隱藏工具提示
-  function hideTooltip() {
-    if (tooltipTimer) {
-      clearTimeout(tooltipTimer);
-      tooltipTimer = null;
-    }
-    tooltip.style.display = 'none';
-  }
-  
-  // 修改工具提示的滑鼠事件處理
-  container.addEventListener('mouseover', function(e) {
-    showTooltip(e);
-  });
-  
-  container.addEventListener('mouseout', function() {
-    hideTooltip();
-  });
-  
-  debug("羅盤及藍色十字線已新增");
-
-  // 修改容器設置，使其可以獲得焦點
-  container.tabIndex = 0; // 使元素可以接收鍵盤焦點
-  container.style.outline = 'none'; // 移除焦點時的外框，保持美觀
-  
   // 添加點擊事件來確保羅盤可以取得焦點
   container.addEventListener('mousedown', function(e) {    
     // 使用 setTimeout 確保在點擊事件完成後才執行焦點獲取
@@ -647,7 +611,7 @@ window.addEventListener('load', () => {
     focusReminder.style.fontSize = '12px';
     focusReminder.style.whiteSpace = 'nowrap';
     focusReminder.textContent = '點擊羅盤以啟用快捷鍵';
-    focusReminder.style.zIndex = '10005';
+    focusReminder.style.zIndex = '2147483647';
     focusReminder.style.pointerEvents = 'none';
     
     container.appendChild(focusReminder);
