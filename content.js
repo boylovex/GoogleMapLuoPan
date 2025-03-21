@@ -134,6 +134,7 @@ window.addEventListener('load', () => {
   blueHorizontalLine.style.left = '0';
   blueHorizontalLine.style.transform = 'translateY(-50%)';
   blueHorizontalLine.style.pointerEvents = 'none';
+  blueHorizontalLine.style.opacity = '1';
   
   // 建立垂直藍線
   const blueVerticalLine = document.createElement('div');
@@ -145,6 +146,7 @@ window.addEventListener('load', () => {
   blueVerticalLine.style.left = '50%';
   blueVerticalLine.style.transform = 'translateX(-50%)';
   blueVerticalLine.style.pointerEvents = 'none';
+  blueVerticalLine.style.opacity = '1';
   
   // 將元素組合在一起
   container.appendChild(overlay);
