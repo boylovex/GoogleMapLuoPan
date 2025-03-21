@@ -93,6 +93,17 @@ window.addEventListener('load', () => {
   overlay.style.opacity = '0.8'; // 初始透明度
   overlay.id = 'luopanOverlay';
   
+  // 建立黑色十字線容器
+  const blackLineContainer = document.createElement('div');
+  blackLineContainer.id = 'blackCrossContainer';
+  blackLineContainer.style.position = 'absolute';
+  blackLineContainer.style.width = '100%';
+  blackLineContainer.style.height = '100%';
+  blackLineContainer.style.top = '0';
+  blackLineContainer.style.left = '0';
+  blackLineContainer.style.pointerEvents = 'none';
+  blackLineContainer.style.zIndex = '2147483646';
+
   // 建立水平線（黑色）
   const horizontalLine = document.createElement('div');
   horizontalLine.style.position = 'absolute';
@@ -102,7 +113,6 @@ window.addEventListener('load', () => {
   horizontalLine.style.top = '50%';
   horizontalLine.style.left = '0';
   horizontalLine.style.transform = 'translateY(-50%)';
-  horizontalLine.style.zIndex = '2147483646';
   horizontalLine.style.pointerEvents = 'none';
   
   // 建立垂直線（黑色）
@@ -114,8 +124,11 @@ window.addEventListener('load', () => {
   verticalLine.style.top = '0';
   verticalLine.style.left = '50%';
   verticalLine.style.transform = 'translateX(-50%)';
-  verticalLine.style.zIndex = '2147483646';
   verticalLine.style.pointerEvents = 'none';
+
+  // 將黑色十字線加入容器
+  blackLineContainer.appendChild(horizontalLine);
+  blackLineContainer.appendChild(verticalLine);
 
   // 建立藍色十字線容器
   const blueLineContainer = document.createElement('div');
@@ -154,8 +167,7 @@ window.addEventListener('load', () => {
   
   // 將元素組合在一起
   container.appendChild(overlay);
-  container.appendChild(horizontalLine);
-  container.appendChild(verticalLine);
+  container.appendChild(blackLineContainer);  // 加入黑色十字線容器
   blueLineContainer.appendChild(blueHorizontalLine);
   blueLineContainer.appendChild(blueVerticalLine);
   container.appendChild(blueLineContainer); // 添加藍色十字線容器到主容器
@@ -216,7 +228,8 @@ window.addEventListener('load', () => {
   // 應用羅盤旋轉
   function applyRotation() {
     overlay.style.transform = `rotate(${currentRotation}deg)`;
-    debug(`羅盤旋轉至: ${currentRotation} 度`);
+    blackLineContainer.style.transform = `rotate(${currentRotation}deg)`;
+    debug(`羅盤和黑色十字線旋轉至: ${currentRotation} 度`);
   }
   
   // 旋轉羅盤
@@ -445,7 +458,7 @@ window.addEventListener('load', () => {
 
     debug(`按鍵按下: ${e.key}, Alt=${e.altKey}, Ctrl=${e.ctrlKey}, Shift=${e.shiftKey}`);                          
 
-    // 如果按下其他修飾鍵，不處理事件
+    // 如果按下其他修飸鍵，不處理事件
     if (e.altKey || e.shiftKey || e.ctrlKey) {
       debug("偵測到修飾鍵，略過處理");
       return;
