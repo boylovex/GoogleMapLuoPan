@@ -24,7 +24,7 @@ chrome.storage.onChanged.addListener(function(changes, namespace) {
 
 // 等待頁面完全載入後再執行
 window.addEventListener('load', () => {
-  debug("Google Map 羅盤插件啟動中...");
+  debug("Google Map 羵盤插件啟動中...");
 
   // 控制羅盤顯示/隱藏的變數
   let isVisible = false; // 預設隱藏
@@ -33,9 +33,13 @@ window.addEventListener('load', () => {
   const container = document.createElement('div');
   container.style.position = 'fixed'; // 改為 fixed 定位，相對於視窗
   container.style.display = isVisible ? 'block' : 'none';
+  container.style.outline = 'none';
+  container.tabIndex = -1; // 使用 -1 允許程式化的焦點，但不進入 Tab 序列
+  container.style.userSelect = 'none'; // 防止文字選取
+  container.style.webkitUserSelect = 'none';
   
   // 計算瀏覽器視窗的中心點，並設定羅盤初始位置
-  const initialWidth = 200; // 羅盤初始寬度
+  const initialWidth = 200; // 羵盤初始寬度
   const initialHeight = 200; // 羵盤初始高度
   
   // 計算畫面中間位置（改為使用 viewport 尺寸）
@@ -249,16 +253,20 @@ window.addEventListener('load', () => {
     isVisible = !isVisible;
     container.style.display = isVisible ? 'block' : 'none';
     
+    if (isVisible) {
+      // 確保在顯示時立即獲得焦點
+      setTimeout(() => {
+        container.focus({ preventScroll: true });
+        debug('羅盤顯示並取得焦點');
+      }, 0);
+      setupMutationObserver();
+    }
+    
     // 發送狀態更新到 background script
     chrome.runtime.sendMessage({ 
       action: 'visibilityChanged', 
       isVisible: isVisible 
     });
-    
-    // 設定 MutationObserver 來監視 DOM 變更
-    if (isVisible) {
-      setupMutationObserver();
-    }
     
     debug(`圖片顯示狀態: ${isVisible ? '顯示' : '隱藏'}`);
   }
@@ -429,21 +437,28 @@ window.addEventListener('load', () => {
   }, { passive: false, capture: true });
   
   // 重新實作鍵盤事件處理 - 針對字母按鍵特別處理
-  function handleKeyDown(e) {
-    debug(`按鍵按下: ${e.key} (keyCode: ${e.keyCode}), 目前焦點元素:`, document.activeElement.tagName);
-
-    if(!isVisible && e.key !== 'v' && e.key !== 'V') {
-      debug("羅盤隱藏中，忽略按鍵");
-      return;
-    }
-
-    // 確保按鍵能被偵測到 (即使是在輸入框中)
+  function handleKeyDown(e) { 
+    // 檢查焦點元素
     const isInputElement = document.activeElement.tagName === 'INPUT' || 
                           document.activeElement.tagName === 'TEXTAREA' || 
                           document.activeElement.isContentEditable;
+
+    debug(`按鍵按下: ${e.key}, Alt=${e.altKey}, Ctrl=${e.ctrlKey}, Shift=${e.shiftKey}`);                          
+
+    // 如果按下其他修飾鍵，不處理事件
+    if (e.altKey || e.shiftKey || e.ctrlKey) {
+      debug("偵測到修飾鍵，略過處理");
+      return;
+    }
+
+    // 如果羅盤隱藏且不是 V 鍵，忽略
+    if (!isVisible && e.key.toLowerCase() !== 'v') {
+      debug("羅盤隱藏中，忽略按鍵");
+      return;
+    }
     
-    // 如果焦點在輸入元素中，不處理字母按鍵
-    if (isInputElement && /^[a-zA-Z]$/.test(e.key)) {
+    // 在輸入元素中時，只處理 V 鍵
+    if (isInputElement) {
       debug("焦點在輸入元素上，略過字母按鍵處理");
       return;
     }
