@@ -38,8 +38,10 @@ document.addEventListener('DOMContentLoaded', function() {
         action: action,
         ...data
       }, function(response) {
+        console.log('Response from content script:', response);
         if (chrome.runtime.lastError) {
-          alert('無法與地圖頁面通訊，請確認您是否在 Google Maps 頁面上。');
+          alert('無法與目前頁面通訊，請重新整理頁面後再試。');
+          return;
         }
         return true;
       });
@@ -95,15 +97,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('clearLines')?.addEventListener('click', () => sendMessageToContent('clearAllLines'));
 
   // 處理縮放按鈕
-  document.getElementById('zoomIn').addEventListener('click', function() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {action: 'zoomLuoPan', scale: 1.1});
-    });
-  });
-
-  document.getElementById('zoomOut').addEventListener('click', function() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {action: 'zoomLuoPan', scale: 0.9});
-    });
-  });
+  document.getElementById('zoomIn')?.addEventListener('click', () => sendMessageToContent('zoomLuoPan', { scale: 1.1 }));
+  document.getElementById('zoomOut')?.addEventListener('click', () => sendMessageToContent('zoomLuoPan', { scale: 0.9 }));
 });

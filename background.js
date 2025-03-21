@@ -1,11 +1,13 @@
-chrome.action.onClicked.addListener((tab) => {
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    function: addOverlay
-  });
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === 'extensionReady') {
+    // 更新圖示狀態為啟用（高亮）
+    chrome.action.enable(sender.tab.id);
+  } else if (request.action === 'visibilityChanged') {
+    // 根據羅盤的顯示狀態更新圖示
+    if (request.isVisible) {
+      chrome.action.enable(sender.tab.id);
+    } else {
+      chrome.action.disable(sender.tab.id);
+    }
+  }
 });
-
-function addOverlay() {
-  // 這邊可以放一些初始化程式碼，如果需要在點擊擴充功能圖示時執行
-  console.log("擴充功能已啟動");
-}

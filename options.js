@@ -5,12 +5,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveButton = document.getElementById('saveButton');
   const useDefaultButton = document.getElementById('useDefault');
   const statusMessage = document.getElementById('statusMessage');
+  const debugModeCheckbox = document.getElementById('debugMode');
   
   let imageChanged = false;
+  let settingsChanged = false;
   let imageDataUrl = null;
 
   // 載入已儲存的圖片（如果有）
-  chrome.storage.local.get(['customImageData', 'useDefaultImage'], function(result) {
+  chrome.storage.local.get(['customImageData', 'useDefaultImage', 'debugMode'], function(result) {
     if (result.customImageData && !result.useDefaultImage) {
       imagePreview.src = result.customImageData;
       imageDataUrl = result.customImageData;
@@ -19,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
       imagePreview.src = 'LuoPan.png';
       imageDataUrl = null;
     }
+    debugModeCheckbox.checked = result.debugMode || false;
   });
 
   // 監聽檔案選擇
@@ -43,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function() {
     reader.readAsDataURL(file);
   });
 
+  // 監聽除錯模式變更
+  debugModeCheckbox.addEventListener('change', function() {
+    settingsChanged = true;
+  });
+
   // 恢復預設圖片
   useDefaultButton.addEventListener('click', function() {
     imagePreview.src = 'LuoPan.png';
@@ -53,15 +61,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 儲存設定
   saveButton.addEventListener('click', function() {
-    if (!imageChanged) {
-      showStatus('尚未選擇新圖片或更改設定', 'error');
+    if (!imageChanged && !settingsChanged) {
+      showStatus('尚未進行任何變更', 'error');
       return;
     }
 
     const data = {
       customImageData: imageDataUrl,
       useDefaultImage: imageDataUrl === null,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      debugMode: debugModeCheckbox.checked
     };
 
     chrome.storage.local.set(data, function() {
@@ -70,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         showStatus('設定已儲存成功！重新開啟 Google Maps 頁面以套用變更。', 'success');
         imageChanged = false;
+        settingsChanged = false;
       }
     });
   });

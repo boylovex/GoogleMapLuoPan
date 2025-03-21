@@ -8,7 +8,6 @@
     "scripting",
     "storage"
   ],
-  "options_page": "options.html",
   "action": {
     "default_popup": "popup.html",
     "default_title": "Google Map 羅盤"
@@ -19,7 +18,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.google.com/maps/*"
+        "<all_urls>"
       ],
       "js": [
         "content.js"

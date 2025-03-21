@@ -1,6 +1,30 @@
+// 除錯模式控制
+let isDebugMode = false;
+
+// 除錯輔助函式
+function debug(...args) {
+    if (isDebugMode) {
+        console.log('[羅盤除錯]', ...args);
+    }
+}
+
+// 載入除錯模式設定
+chrome.storage.local.get(['debugMode'], function(result) {
+    isDebugMode = result.debugMode || false;
+    debug('除錯模式：', isDebugMode ? '開啟' : '關閉');
+});
+
+// 監聽除錯模式變更
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+    if (namespace === 'local' && changes.debugMode) {
+        isDebugMode = changes.debugMode.newValue;
+        debug('除錯模式已變更為：', isDebugMode ? '開啟' : '關閉');
+    }
+});
+
 // 等待頁面完全載入後再執行
 window.addEventListener('load', () => {
-  console.log("Google Map 羅盤插件啟動中...");
+  debug("Google Map 羅盤插件啟動中...");
 
   // 控制羅盤顯示/隱藏的變數
   let isVisible = false; // 預設隱藏
@@ -33,12 +57,12 @@ window.addEventListener('load', () => {
   // 從儲存空間載入自訂圖片
   chrome.storage.local.get(['customImageData', 'useDefaultImage'], function(result) {
     if (result.customImageData && !result.useDefaultImage) {
-      console.log("使用自訂羅盤圖片");
+      debug("使用自訂羅盤圖片");
       overlay.src = result.customImageData;
     } else {
       // 使用預設圖片
       const overlayUrl = chrome.runtime.getURL("LuoPan.png");
-      console.log("使用預設羅盤圖片: " + overlayUrl);
+      debug("使用預設羅盤圖片: " + overlayUrl);
       overlay.src = overlayUrl;
     }
     
@@ -157,7 +181,7 @@ window.addEventListener('load', () => {
     if (e.key === 'Control' && isVisible) {
       isCtrlPressed = true;
       container.style.cursor = 'crosshair';
-      console.log('Ctrl 鍵已按下，畫線模式已啟用');
+      debug('Ctrl 鍵已按下，畫線模式已啟用');
     }
     // 按鍵功能處理在另一個專門的處理函式中
   }, true);
@@ -168,14 +192,14 @@ window.addEventListener('load', () => {
       if (!isDragging) {
         container.style.cursor = 'move';
       }
-      console.log('Ctrl 鍵已釋放，畫線模式已停用');
+      debug('Ctrl 鍵已釋放，畫線模式已停用');
     }
   }, true);
   
   // 應用羅盤旋轉
   function applyRotation() {
     overlay.style.transform = `rotate(${currentRotation}deg)`;
-    console.log(`羅盤旋轉至: ${currentRotation} 度`);
+    debug(`羅盤旋轉至: ${currentRotation} 度`);
   }
   
   // 旋轉羅盤
@@ -183,13 +207,13 @@ window.addEventListener('load', () => {
     currentRotation = (currentRotation + degrees) % 360;
     if (currentRotation < 0) currentRotation += 360;
     applyRotation();
-    console.log(`旋轉羅盤，當前角度: ${currentRotation}`);
+    debug(`旋轉羅盤，當前角度: ${currentRotation}`);
   }
   
   // 應用藍色十字線的旋轉
   function applyBlueLineRotation() {
     blueLineContainer.style.transform = `rotate(${blueLineRotation}deg)`;
-    console.log(`藍色十字線旋轉至: ${blueLineRotation} 度`);
+    debug(`藍色十字線旋轉至: ${blueLineRotation} 度`);
   }
   
   // 旋轉藍色十字線
@@ -197,21 +221,21 @@ window.addEventListener('load', () => {
     blueLineRotation = (blueLineRotation + degrees) % 360;
     if (blueLineRotation < 0) blueLineRotation += 360;
     applyBlueLineRotation();
-    console.log(`旋轉藍線，當前角度: ${blueLineRotation}`);
+    debug(`旋轉藍線，當前角度: ${blueLineRotation}`);
   }
   
   // 調整透明度
   function adjustOpacity(delta) {
     currentOpacity = Math.max(0.1, Math.min(1.0, currentOpacity + delta));
     overlay.style.opacity = currentOpacity.toString();
-    console.log(`圖片透明度設為: ${currentOpacity}`);
+    debug(`圖片透明度設為: ${currentOpacity}`);
   }
   
   // 切換疊加層顯示/隱藏
   function toggleVisibility() {
     isVisible = !isVisible;
     container.style.display = isVisible ? 'block' : 'none';
-    console.log(`圖片顯示狀態: ${isVisible ? '顯示' : '隱藏'}`);
+    debug(`圖片顯示狀態: ${isVisible ? '顯示' : '隱藏'}`);
   }
   
   // 清除所有線條的函式
@@ -222,12 +246,12 @@ window.addEventListener('load', () => {
         line.parentNode.removeChild(line);
       }
     }
-    console.log('所有線條已清除');
+    debug('所有線條已清除');
   }
   
   // 設定拖曳功能 - 加入對 Ctrl 鍵的檢查
   container.addEventListener('mousedown', function(e) {
-    console.log(`滑鼠按下在羅盤上，Ctrl=${isCtrlPressed}`);
+    debug(`滑鼠按下在羅盤上，Ctrl=${isCtrlPressed}`);
     
     if (isCtrlPressed) {
       // 按下 Ctrl 時執行畫線邏輯
@@ -302,7 +326,7 @@ window.addEventListener('load', () => {
     // 完成線條繪製
     if (isDrawingLine && currentLine) {
       lines.push(currentLine);
-      console.log('線條完成繪製');
+      debug('線條完成繪製');
       isDrawingLine = false;
       currentLine = null;
     }
@@ -350,10 +374,10 @@ window.addEventListener('load', () => {
   
   // 重新實作鍵盤事件處理 - 針對字母按鍵特別處理
   function handleKeyDown(e) {
-    console.log(`按鍵按下: ${e.key} (keyCode: ${e.keyCode}), 目前焦點元素:`, document.activeElement.tagName);
+    debug(`按鍵按下: ${e.key} (keyCode: ${e.keyCode}), 目前焦點元素:`, document.activeElement.tagName);
 
     if(!isVisible && e.key !== 'v' && e.key !== 'V') {
-      console.log("羅盤隱藏中，忽略按鍵");
+      debug("羅盤隱藏中，忽略按鍵");
       return;
     }
 
@@ -364,7 +388,7 @@ window.addEventListener('load', () => {
     
     // 如果焦點在輸入元素中，不處理字母按鍵
     if (isInputElement && /^[a-zA-Z]$/.test(e.key)) {
-      console.log("焦點在輸入元素上，略過字母按鍵處理");
+      debug("焦點在輸入元素上，略過字母按鍵處理");
       return;
     }
 
@@ -372,25 +396,25 @@ window.addEventListener('load', () => {
     switch (e.key.toLowerCase()) {
       // 羵盤旋轉鍵
       case 'q':
-        console.log("Q鍵被按下，嘗試左旋羅盤 5 度");
+        debug("Q鍵被按下，嘗試左旋羅盤 5 度");
         rotateOverlay(-5);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'e':
-        console.log("E鍵被按下，嘗試右旋羅盤 5 度");
+        debug("E鍵被按下，嘗試右旋羅盤 5 度");
         rotateOverlay(5);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'w':
-        console.log("W鍵被按下，嘗試左旋羅盤 1 度");
+        debug("W鍵被按下，嘗試左旋羅盤 1 度");
         rotateOverlay(-1);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'r':
-        console.log("R鍵被按下，嘗試右旋羅盤 1 度");
+        debug("R鍵被按下，嘗試右旋羅盤 1 度");
         rotateOverlay(1);
         e.preventDefault();
         e.stopPropagation();
@@ -398,25 +422,25 @@ window.addEventListener('load', () => {
       
       // 藍色十字線旋轉鍵
       case 'a':
-        console.log("A鍵被按下，藍色十字線左旋 5 度");
+        debug("A鍵被按下，藍色十字線左旋 5 度");
         rotateBlueLines(-5);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'd':
-        console.log("D鍵被按下，藍色十字線右旋 5 度");
+        debug("D鍵被按下，藍色十字線右旋 5 度");
         rotateBlueLines(5);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 's':
-        console.log("S鍵被按下，藍色十字線左旋 1 度");
+        debug("S鍵被按下，藍色十字線左旋 1 度");
         rotateBlueLines(-1);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'f':
-        console.log("F鍵被按下，藍色十字線右旋 1 度");
+        debug("F鍵被按下，藍色十字線右旋 1 度");
         rotateBlueLines(1);
         e.preventDefault();
         e.stopPropagation();
@@ -424,13 +448,13 @@ window.addEventListener('load', () => {
       
       // 透明度控制鍵
       case 'o':
-        console.log("O鍵被按下，提高透明度");
+        debug("O鍵被按下，提高透明度");
         adjustOpacity(0.1);
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'p':
-        console.log("P鍵被按下，降低透明度");
+        debug("P鍵被按下，降低透明度");
         adjustOpacity(-0.1);
         e.preventDefault();
         e.stopPropagation();
@@ -438,7 +462,7 @@ window.addEventListener('load', () => {
       
       // 顯示/隱藏控制鍵
       case 'v':
-        console.log("V鍵被按下，切換顯示/隱藏");
+        debug("V鍵被按下，切換顯示/隱藏");
         toggleVisibility();
         e.preventDefault();
         e.stopPropagation();
@@ -446,7 +470,7 @@ window.addEventListener('load', () => {
       
       // 清除線條鍵
       case 'c':
-        console.log("C鍵被按下，清除所有線條");
+        debug("C鍵被按下，清除所有線條");
         clearAllLines();
         e.preventDefault();
         e.stopPropagation();
@@ -456,28 +480,28 @@ window.addEventListener('load', () => {
       case 'arrowleft':
         const leftPos = parseInt(container.style.left) || 0;
         container.style.left = (leftPos - 1) + 'px';
-        console.log('羅盤向左移動一像素');
+        debug('羅盤向左移動一像素');
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'arrowright':
         const rightPos = parseInt(container.style.left) || 0;
         container.style.left = (rightPos + 1) + 'px';
-        console.log('羅盤向右移動一像素');
+        debug('羅盤向右移動一像素');
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'arrowup':
         const topPos = parseInt(container.style.top) || 0;
         container.style.top = (topPos - 1) + 'px';
-        console.log('羅盤向上移動一像素');
+        debug('羅盤向上移動一像素');
         e.preventDefault();
         e.stopPropagation();
         break;
       case 'arrowdown':
         const bottomPos = parseInt(container.style.top) || 0;
         container.style.top = (bottomPos + 1) + 'px';
-        console.log('羅盤向下移動一像素');
+        debug('羅盤向下移動一像素');
         e.preventDefault();
         e.stopPropagation();
         break;
@@ -498,7 +522,7 @@ window.addEventListener('load', () => {
   
   // 添加全局焦點監聽，確保我們能追蹤焦點變化
   document.addEventListener('focus', function(e) {
-    console.log('焦點切換到元素:', e.target.tagName, e.target);
+    debug('焦點切換到元素:', e.target.tagName, e.target);
   }, true);
 
   // 建立按鍵功能提示元素
@@ -580,39 +604,37 @@ window.addEventListener('load', () => {
     hideTooltip();
   });
   
-  console.log("羅盤及藍色十字線已新增");
+  debug("羅盤及藍色十字線已新增");
 
   // 修改容器設置，使其可以獲得焦點
   container.tabIndex = 0; // 使元素可以接收鍵盤焦點
   container.style.outline = 'none'; // 移除焦點時的外框，保持美觀
   
   // 添加點擊事件來確保羅盤可以取得焦點
-  container.addEventListener('mousedown', function(e) {
-    // 防止中文輸入法問題，先記錄按下時的點擊座標
-    const clickX = e.clientX;
-    const clickY = e.clientY;
-    
+  container.addEventListener('mousedown', function(e) {    
     // 使用 setTimeout 確保在點擊事件完成後才執行焦點獲取
     setTimeout(() => {
-      // 確保羅盤取得焦點
       container.focus({ preventScroll: true });
-      console.log('羅盤已取得焦點');
-      
-      // 如果有輸入法提示，隱藏它
-      if (inputMethodNotice && inputMethodNotice.style.display === 'block') {
-        inputMethodNotice.style.display = 'none';
-      }
+      debug('羅盤已取得焦點');
     }, 50);
     
     // 如果正在按 Ctrl 繪製線條，不要執行後續程式碼
     if (isCtrlPressed) return;
-    
-    // 拖曳相關的程式碼可以保留
+
+    // 執行拖曳邏輯
+    if (!isCtrlPressed) {
+      isDragging = true;
+      isDrawingLine = false;
+      offsetX = e.clientX - container.offsetLeft;
+      offsetY = e.clientY - container.offsetTop;
+      container.style.cursor = 'grabbing';
+      e.preventDefault();
+    }
   }, true);
   
   // 監聽焦點狀態變化，當羅盤失去焦點時，顯示提示
   container.addEventListener('blur', function() {
-    console.log('羅盤已失去焦點');
+    debug('羅盤已失去焦點');
     
     // 可選：顯示小提示，提醒用戶點擊羅盤以啟用快捷鍵
     const focusReminder = document.createElement('div');
@@ -645,7 +667,7 @@ window.addEventListener('load', () => {
     
     // 點擊 V 鍵時總是顯示羅盤（即使羅盤沒有焦點）
     if ((e.key === 'v' || e.key === 'V') && !isInputElement(document.activeElement)) {
-      console.log("V 鍵被按下，嘗試顯示羅盤");
+      debug("V 鍵被按下，嘗試顯示羅盤");
       if (!isVisible) {
         toggleVisibility();
         e.preventDefault();
@@ -671,7 +693,7 @@ window.addEventListener('load', () => {
   // 應用初始焦點
   setTimeout(() => {
     container.focus({ preventScroll: true });
-    console.log('羅盤初始焦點已設置');
+    debug('羅盤初始焦點已設置');
   }, 500);
   
   // 處理縮放功能
@@ -702,7 +724,7 @@ window.addEventListener('load', () => {
 
   // 修改監聽來自 popup 的訊息處理機制
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    console.log('收到訊息:', request);
+    debug('收到訊息:', request);
     try {
       switch (request.action) {
         case 'getVisibility':
@@ -737,4 +759,7 @@ window.addEventListener('load', () => {
     }
     return true; // 保持通道開啟以進行非同步回應
   });
+
+  // 通知 background.js 擴充功能已就緒
+  chrome.runtime.sendMessage({ action: 'extensionReady' });
 });
