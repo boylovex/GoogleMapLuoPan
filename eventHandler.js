@@ -1,14 +1,19 @@
 // 事件處理類別
 class LuopanEventHandler {
     constructor(container, overlay, blackLineContainer, blueLineContainer) {
+        // 儲存DOM元件的參考
         this.container = container;
         this.overlay = overlay;
         this.blackLineContainer = blackLineContainer;
         this.blueLineContainer = blueLineContainer;
+        
+        // 狀態追蹤
         this.currentRotation = 0;
         this.blueLineRotation = 0;
         this.currentOpacity = 0.8;
         this.isVisible = false;
+        
+        // 拖曳相關狀態
         this.isDragging = false;
         this.isDrawingLine = false;
         this.isCtrlPressed = false;
@@ -18,7 +23,11 @@ class LuopanEventHandler {
         this.currentLine = null;
         this.offsetX = 0;
         this.offsetY = 0;
-
+        
+        // 取得除錯函式
+        this.debug = window.LuopanCore.debug;
+        
+        // 初始化事件
         this.initializeEventListeners();
     }
 
@@ -39,6 +48,8 @@ class LuopanEventHandler {
         
         // 焦點事件
         this.container.addEventListener('blur', this.handleBlur.bind(this));
+        
+        this.debug('事件監聽器已初始化');
     }
 
     // 處理全域按鍵事件
@@ -53,9 +64,18 @@ class LuopanEventHandler {
                 setTimeout(() => this.container.focus({ preventScroll: true }), 50);
             }
         }
+        
+        // 偵測 Ctrl 按鍵
+        if (e.key === 'Control' && this.isVisible) {
+            this.isCtrlPressed = true;
+            if (!this.isDragging) {
+                this.container.style.cursor = 'crosshair';
+                this.debug('已啟用畫線模式');
+            }
+        }
     }
 
-    // 判斷是否為輸入元素
+    // 判斷是否為輸入元件
     isInputElement(element) {
         if (!element) return false;
         return element.tagName === 'INPUT' || 
@@ -98,6 +118,7 @@ class LuopanEventHandler {
         }
         e.preventDefault();
         e.stopPropagation();
+        this.debug(`快捷鍵 '${e.key}' 已處理`);
     }
 
     // 滑鼠按下事件
@@ -135,6 +156,7 @@ class LuopanEventHandler {
         
         e.preventDefault();
         e.stopPropagation();
+        this.debug(`開始畫線: (${this.startX}, ${this.startY})`);
     }
 
     // 開始拖曳
@@ -145,6 +167,7 @@ class LuopanEventHandler {
         this.offsetY = e.clientY - this.container.offsetTop;
         this.container.style.cursor = 'grabbing';
         e.preventDefault();
+        this.debug('開始拖曳羅盤');
     }
 
     // 滑鼠移動事件
@@ -187,11 +210,13 @@ class LuopanEventHandler {
             this.lines.push(this.currentLine);
             this.isDrawingLine = false;
             this.currentLine = null;
+            this.debug('線條繪製完成');
         }
         
         if (this.isDragging) {
             this.isDragging = false;
-            this.container.style.cursor = 'move';
+            this.container.style.cursor = this.isCtrlPressed ? 'crosshair' : 'move';
+            this.debug('結束拖曳');
         }
     }
 
@@ -200,29 +225,13 @@ class LuopanEventHandler {
         e.stopPropagation();
         e.preventDefault();
         
-        const rect = this.container.getBoundingClientRect();
         const scale = e.deltaY > 0 ? 0.9 : 1.1;
-        this.handleZoom(scale, rect);
+        const rect = this.container.getBoundingClientRect();
+        
+        // 使用位置管理器處理縮放
+        window.LuopanPositionManager.handleZoom(this.container, scale);
         
         return false;
-    }
-
-    // 縮放處理
-    handleZoom(scale, rect) {
-        const currentWidth = rect.width;
-        const currentHeight = rect.height;
-        const centerX = rect.left + currentWidth / 2;
-        const centerY = rect.top + currentHeight / 2;
-        
-        const newWidth = Math.round(currentWidth * scale);
-        const newHeight = Math.round(currentHeight * scale);
-        const newLeft = centerX - newWidth / 2;
-        const newTop = centerY - newHeight / 2;
-        
-        this.container.style.width = newWidth + 'px';
-        this.container.style.height = newHeight + 'px';
-        this.container.style.left = newLeft + 'px';
-        this.container.style.top = newTop + 'px';
     }
 
     // Ctrl 鍵釋放事件
@@ -231,6 +240,7 @@ class LuopanEventHandler {
             this.isCtrlPressed = false;
             if (!this.isDragging) {
                 this.container.style.cursor = 'move';
+                this.debug('已退出畫線模式');
             }
         }
     }
@@ -270,6 +280,7 @@ class LuopanEventHandler {
         if (this.currentRotation < 0) this.currentRotation += 360;
         this.overlay.style.transform = `rotate(${this.currentRotation}deg)`;
         this.blackLineContainer.style.transform = `rotate(${this.currentRotation}deg)`;
+        this.debug(`羅盤旋轉至: ${this.currentRotation}度`);
     }
 
     // 旋轉藍線
@@ -277,18 +288,21 @@ class LuopanEventHandler {
         this.blueLineRotation = (this.blueLineRotation + degrees) % 360;
         if (this.blueLineRotation < 0) this.blueLineRotation += 360;
         this.blueLineContainer.style.transform = `rotate(${this.blueLineRotation}deg)`;
+        this.debug(`藍線旋轉至: ${this.blueLineRotation}度`);
     }
 
     // 調整透明度
     adjustOpacity(delta) {
         this.currentOpacity = Math.max(0.1, Math.min(1.0, this.currentOpacity + delta));
         this.overlay.style.opacity = this.currentOpacity.toString();
+        this.debug(`羅盤透明度調整為: ${this.currentOpacity}`);
     }
 
     // 切換可見性
     toggleVisibility() {
         this.isVisible = !this.isVisible;
         this.container.style.display = this.isVisible ? 'block' : 'none';
+        this.debug(`羅盤可見性切換為: ${this.isVisible ? '顯示' : '隱藏'}`);
         chrome.runtime.sendMessage({ 
             action: 'visibilityChanged', 
             isVisible: this.isVisible 
@@ -297,12 +311,14 @@ class LuopanEventHandler {
 
     // 清除所有線條
     clearAllLines() {
+        const linesContainer = this.container.querySelector('#luopanLinesContainer');
         while (this.lines.length > 0) {
             const line = this.lines.pop();
             if (line && line.parentNode) {
                 line.parentNode.removeChild(line);
             }
         }
+        this.debug('所有線條已清除');
     }
 
     // 移動容器
@@ -314,5 +330,5 @@ class LuopanEventHandler {
     }
 }
 
-// 改為全域變數方式
+// 對外公開類別
 window.LuopanEventHandler = LuopanEventHandler;

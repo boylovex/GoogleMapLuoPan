@@ -18,14 +18,23 @@
   "content_scripts": [
     {
       "matches": ["*://*.google.com/maps/*"],
-      "js": ["eventHandler.js", "content.js"]
+      "js": [
+        "modules/core.js", 
+        "modules/uiComponents.js", 
+        "modules/positionManager.js", 
+        "eventHandler.js", 
+        "content.js"
+      ]
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
         "LuoPan.png",
-        "eventHandler.js"
+        "eventHandler.js",
+        "modules/core.js",
+        "modules/uiComponents.js",
+        "modules/positionManager.js"
       ],
       "matches": [
         "<all_urls>"
