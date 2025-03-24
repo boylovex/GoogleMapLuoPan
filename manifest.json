@@ -2,12 +2,11 @@
   "manifest_version": 3,
   "name": "風水羅盤套圖",
   "version": "1.0",
-  "description": "在任何網站上（如GoogleMap 或賣房網上的格局圖）疊加可拖曳和縮放的 PNG 圖片。",
+  "description": "在任何網站疊加可拖曳和縮放的 PNG 圖片。",
   "permissions": [
     "activeTab",
     "scripting",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"

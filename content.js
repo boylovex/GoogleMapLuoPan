@@ -152,13 +152,27 @@ window.addEventListener('load', () => {
   blueVerticalLine.style.pointerEvents = 'none';
   blueVerticalLine.style.opacity = '1';
   
+  // 建立黑色十字線容器
+  const blackLineContainer = document.createElement('div');
+  blackLineContainer.id = 'blackCrossContainer';
+  blackLineContainer.style.position = 'absolute';
+  blackLineContainer.style.width = '100%';
+  blackLineContainer.style.height = '100%';
+  blackLineContainer.style.top = '0';
+  blackLineContainer.style.left = '0';
+  blackLineContainer.style.pointerEvents = 'none';
+  blackLineContainer.style.zIndex = '2147483646';
+
+  // 將原本的水平和垂直線加入黑色十字線容器
+  blackLineContainer.appendChild(horizontalLine);
+  blackLineContainer.appendChild(verticalLine);
+  
   // 將元素組合在一起
   container.appendChild(overlay);
-  container.appendChild(horizontalLine);
-  container.appendChild(verticalLine);
+  container.appendChild(blackLineContainer);
   blueLineContainer.appendChild(blueHorizontalLine);
   blueLineContainer.appendChild(blueVerticalLine);
-  container.appendChild(blueLineContainer); // 添加藍色十字線容器到主容器
+  container.appendChild(blueLineContainer);
   document.body.appendChild(container);
   
   // 建立線條容器
@@ -216,6 +230,7 @@ window.addEventListener('load', () => {
   // 應用羅盤旋轉
   function applyRotation() {
     overlay.style.transform = `rotate(${currentRotation}deg)`;
+    blackLineContainer.style.transform = `rotate(${currentRotation}deg)`;
     debug(`羅盤旋轉至: ${currentRotation} 度`);
   }
   
