@@ -34,16 +34,43 @@ document.addEventListener('DOMContentLoaded', function() {
   // 通用函式：傳送訊息到 content script
   function sendMessageToContent(action, data = {}) {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (!tabs || !tabs[0]) {
+        console.error('找不到當前分頁');
+        alert('無法找到當前分頁，請確認分頁是否正常開啟。');
+        return;
+      }
+
       chrome.tabs.sendMessage(tabs[0].id, {
         action: action,
         ...data
       }, function(response) {
-        console.log('Response from content script:', response);
         if (chrome.runtime.lastError) {
-          alert('無法與目前頁面通訊，請重新整理頁面後再試。');
+          console.error('通訊錯誤:', chrome.runtime.lastError);
+          // 檢查是否需要重新載入 content script
+          chrome.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            files: ['content.js']
+          }).then(() => {
+            // 重新嘗試傳送訊息
+            setTimeout(() => {
+              chrome.tabs.sendMessage(tabs[0].id, {
+                action: action,
+                ...data
+              }, function(retryResponse) {
+                if (chrome.runtime.lastError) {
+                  alert('請重新整理頁面後再試。如果問題持續發生，請確認：\n1. 網頁是否完全載入\n2. 擴充功能是否有權限存取此網頁');
+                }
+              });
+            }, 500);
+          }).catch(err => {
+            console.error('重新載入 content script 失敗:', err);
+            alert('無法載入必要的程式碼，請重新安裝擴充功能。');
+          });
           return;
         }
-        return true;
+        if (response) {
+          console.log('Response from content script:', response);
+        }
       });
     });
   }
