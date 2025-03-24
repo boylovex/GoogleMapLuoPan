@@ -6,13 +6,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const useDefaultButton = document.getElementById('useDefault');
   const statusMessage = document.getElementById('statusMessage');
   const debugModeCheckbox = document.getElementById('debugMode');
+  const counterClockwisePositiveCheckbox = document.getElementById('counterClockwisePositive');
   
   let imageChanged = false;
   let settingsChanged = false;
   let imageDataUrl = null;
 
-  // 載入已儲存的圖片（如果有）
-  chrome.storage.local.get(['customImageData', 'useDefaultImage', 'debugMode'], function(result) {
+  // 載入已儲存的設定
+  chrome.storage.local.get(['customImageData', 'useDefaultImage', 'debugMode', 'counterClockwisePositive'], function(result) {
     if (result.customImageData && !result.useDefaultImage) {
       imagePreview.src = result.customImageData;
       imageDataUrl = result.customImageData;
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
       imageDataUrl = null;
     }
     debugModeCheckbox.checked = result.debugMode || false;
+    counterClockwisePositiveCheckbox.checked = result.counterClockwisePositive || false;
   });
 
   // 監聽檔案選擇
@@ -51,6 +53,11 @@ document.addEventListener('DOMContentLoaded', function() {
     settingsChanged = true;
   });
 
+  // 監聽左旋方向設定變更
+  counterClockwisePositiveCheckbox.addEventListener('change', function() {
+    settingsChanged = true;
+  });
+
   // 恢復預設圖片
   useDefaultButton.addEventListener('click', function() {
     imagePreview.src = 'LuoPan.png';
@@ -62,22 +69,26 @@ document.addEventListener('DOMContentLoaded', function() {
   // 儲存設定
   saveButton.addEventListener('click', function() {
     if (!imageChanged && !settingsChanged) {
-      showStatus('尚未進行任何變更', 'error');
+      showStatus('尚未進行任何變更', 'warning');
       return;
     }
+
+    // 顯示儲存中訊息
+    showStatus('正在儲存設定...', 'info');
 
     const data = {
       customImageData: imageDataUrl,
       useDefaultImage: imageDataUrl === null,
       lastUpdated: new Date().toISOString(),
-      debugMode: debugModeCheckbox.checked
+      debugMode: debugModeCheckbox.checked,
+      counterClockwisePositive: counterClockwisePositiveCheckbox.checked
     };
 
     chrome.storage.local.set(data, function() {
       if (chrome.runtime.lastError) {
-        showStatus('儲存失敗: ' + chrome.runtime.lastError.message, 'error');
+        showStatus('設定儲存失敗：' + chrome.runtime.lastError.message, 'error');
       } else {
-        showStatus('設定已儲存成功！重新開啟 Google Maps 頁面以套用變更。', 'success');
+        showStatus('設定已儲存成功！請重新開啟 Google Maps 頁面以套用變更。', 'success');
         imageChanged = false;
         settingsChanged = false;
       }
@@ -89,9 +100,15 @@ document.addEventListener('DOMContentLoaded', function() {
     statusMessage.textContent = message;
     statusMessage.className = 'status ' + type;
     statusMessage.style.display = 'block';
-    setTimeout(function() {
-      statusMessage.style.display = 'none';
-    }, 5000);
+    
+    // 只有成功和錯誤訊息會自動消失
+    if (type === 'success' || type === 'error') {
+      setTimeout(function() {
+        if (statusMessage.textContent === message) {
+          statusMessage.style.display = 'none';
+        }
+      }, 5000);
+    }
   }
 
   // 初始化選項頁面控制器

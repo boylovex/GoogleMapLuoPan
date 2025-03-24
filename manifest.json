@@ -38,6 +38,5 @@
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
-  },
-  "privacy_policy": "https://raw.githubusercontent.com/boylovex/GoogleMapLuoPan/main/privacy-policy.md"
+  }
 }
