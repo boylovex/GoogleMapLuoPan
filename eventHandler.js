@@ -145,25 +145,9 @@ class LuopanEventHandler {
     startDrawing(e) {
         this.isDrawingLine = true;
         this.isDragging = false;
-        
-        const rect = this.container.getBoundingClientRect();
-        this.startX = e.clientX - rect.left;
-        this.startY = e.clientY - rect.top;
-        
-        this.currentLine = document.createElement('div');
-        this.currentLine.style.position = 'absolute';
-        this.currentLine.style.backgroundColor = 'red';
-        this.currentLine.style.height = '2px';
-        this.currentLine.style.transformOrigin = '0 0';
-        this.currentLine.style.zIndex = '10001';
-        this.currentLine.style.left = this.startX + 'px';
-        this.currentLine.style.top = this.startY + 'px';
-        
-        this.container.querySelector('#luopanLinesContainer').appendChild(this.currentLine);
-        
+        window.LuopanLineManager.startDrawing(this.container, e);
         e.preventDefault();
         e.stopPropagation();
-        this.debug(`開始畫線: (${this.startX}, ${this.startY})`);
     }
 
     // 開始拖曳
@@ -179,7 +163,7 @@ class LuopanEventHandler {
 
     // 滑鼠移動事件
     handleMouseMove(e) {
-        if (this.isDrawingLine && this.currentLine && this.isCtrlPressed) {
+        if (this.isDrawingLine && this.isCtrlPressed) {
             this.updateDrawingLine(e);
         } else if (this.isDragging && !this.isDrawingLine) {
             this.updateDragging(e);
@@ -188,18 +172,7 @@ class LuopanEventHandler {
 
     // 更新線條繪製
     updateDrawingLine(e) {
-        const rect = this.container.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
-        
-        const dx = currentX - this.startX;
-        const dy = currentY - this.startY;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        this.currentLine.style.width = length + 'px';
-        this.currentLine.style.transform = `rotate(${angle}deg)`;
-        
+        window.LuopanLineManager.updateDrawing(e, this.container);
         e.stopPropagation();
     }
 
@@ -213,17 +186,14 @@ class LuopanEventHandler {
 
     // 滑鼠釋放事件
     handleMouseUp(e) {
-        if (this.isDrawingLine && this.currentLine) {
-            this.lines.push(this.currentLine);
+        if (this.isDrawingLine) {
+            window.LuopanLineManager.finishDrawing();
             this.isDrawingLine = false;
-            this.currentLine = null;
-            this.debug('線條繪製完成');
         }
         
         if (this.isDragging) {
             this.isDragging = false;
             this.container.style.cursor = this.isCtrlPressed ? 'crosshair' : 'move';
-            this.debug('結束拖曳');
         }
     }
 
@@ -320,14 +290,7 @@ class LuopanEventHandler {
 
     // 清除所有線條
     clearAllLines() {
-        const linesContainer = this.container.querySelector('#luopanLinesContainer');
-        while (this.lines.length > 0) {
-            const line = this.lines.pop();
-            if (line && line.parentNode) {
-                line.parentNode.removeChild(line);
-            }
-        }
-        this.debug('所有線條已清除');
+        window.LuopanLineManager.clearAllLines(this.container);
     }
 
     // 移動容器

@@ -1,13 +1,47 @@
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === 'extensionReady') {
-    // 更新圖示狀態為啟用（高亮）
-    chrome.action.enable(sender.tab.id);
-  } else if (request.action === 'visibilityChanged') {
-    // 根據羅盤的顯示狀態更新圖示
-    if (request.isVisible) {
-      chrome.action.enable(sender.tab.id);
-    } else {
-      chrome.action.disable(sender.tab.id);
+// 負責管理擴充功能的背景程式
+class BackgroundController {
+    constructor() {
+        this.initialize();
     }
-  }
-});
+
+    // 初始化背景程式
+    initialize() {
+        this.setupMessageListeners();
+    }
+
+    // 設定訊息監聽器
+    setupMessageListeners() {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            this.handleMessage(request, sender, sendResponse);
+        });
+    }
+
+    // 處理訊息
+    handleMessage(request, sender, sendResponse) {
+        switch (request.action) {
+            case 'extensionReady':
+                this.handleExtensionReady(sender.tab.id);
+                break;
+            case 'visibilityChanged':
+                this.handleVisibilityChanged(sender.tab.id, request.isVisible);
+                break;
+        }
+    }
+
+    // 處理擴充功能就緒
+    handleExtensionReady(tabId) {
+        chrome.action.enable(tabId);
+    }
+
+    // 處理羅盤顯示狀態變更
+    handleVisibilityChanged(tabId, isVisible) {
+        if (isVisible) {
+            chrome.action.enable(tabId);
+        } else {
+            chrome.action.disable(tabId);
+        }
+    }
+}
+
+// 建立並啟動背景控制器
+new BackgroundController();

@@ -93,4 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
       statusMessage.style.display = 'none';
     }, 5000);
   }
+
+  // 初始化選項頁面控制器
+  window.LuopanOptionsController.initialize();
 });

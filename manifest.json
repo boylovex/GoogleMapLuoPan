@@ -17,8 +17,7 @@
     "default_title": "風水羅盤套圖"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -26,6 +25,7 @@
       "js": [
         "modules/core.js",
         "modules/positionManager.js",
+        "modules/lineManager.js",
         "modules/uiComponents.js",
         "eventHandler.js",
         "content.js"

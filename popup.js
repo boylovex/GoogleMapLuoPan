@@ -126,4 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 處理縮放按鈕
   document.getElementById('zoomIn')?.addEventListener('click', () => sendMessageToContent('zoomLuoPan', { scale: 1.1 }));
   document.getElementById('zoomOut')?.addEventListener('click', () => sendMessageToContent('zoomLuoPan', { scale: 0.9 }));
+
+  // 初始化 popup 控制器
+  window.LuopanPopupController.initialize();
 });
