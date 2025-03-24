@@ -154,6 +154,34 @@ class UIComponentsBuilder {
         return reminder;
     }
 
+    // 建立角度顯示元件
+    createAngleDisplay() {
+        const angleDisplay = document.createElement('div');
+        angleDisplay.id = 'angleDisplay';
+        angleDisplay.style.position = 'absolute';
+        angleDisplay.style.top = '-25px';
+        angleDisplay.style.left = '50%';
+        angleDisplay.style.transform = 'translateX(-50%)';
+        angleDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        angleDisplay.style.color = 'white';
+        angleDisplay.style.padding = '2px 8px';
+        angleDisplay.style.borderRadius = '4px';
+        angleDisplay.style.fontSize = '12px';
+        angleDisplay.style.zIndex = '2147483647';
+        angleDisplay.style.pointerEvents = 'none';
+        angleDisplay.textContent = '0°';
+        
+        return angleDisplay;
+    }
+
+    // 更新角度顯示
+    updateAngleDisplay(container, angle) {
+        const angleDisplay = container.querySelector('#angleDisplay');
+        if (angleDisplay) {
+            angleDisplay.textContent = `${Math.round(angle)}°`;
+        }
+    }
+
     // 設定元件尺寸和位置
     setComponentSize(component, width, height) {
         component.style.width = width + 'px';

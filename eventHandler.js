@@ -259,6 +259,7 @@ class LuopanEventHandler {
         if (this.currentRotation < 0) this.currentRotation += 360;
         this.overlay.style.transform = `rotate(${this.currentRotation}deg)`;
         this.blackLineContainer.style.transform = `rotate(${this.currentRotation}deg)`;
+        window.LuopanUIComponents.updateAngleDisplay(this.container, this.currentRotation);
         this.debug(`羅盤旋轉至: ${this.currentRotation}度`);
     }
 

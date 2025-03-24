@@ -39,6 +39,10 @@ window.addEventListener('load', () => {
     const blueLineContainer = window.LuopanUIComponents.createBlueCrossContainer();
     const linesContainer = window.LuopanUIComponents.createLinesContainer();
 
+    // 建立角度顯示器
+    const angleDisplay = window.LuopanUIComponents.createAngleDisplay();
+    container.appendChild(angleDisplay);
+
     // 組合所有元件
     container.appendChild(overlay);
     container.appendChild(blackLineContainer);
