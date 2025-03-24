@@ -273,19 +273,7 @@ class LuopanEventHandler {
 
     // 顯示焦點提醒
     showFocusReminder() {
-        const focusReminder = document.createElement('div');
-        focusReminder.style.position = 'absolute';
-        focusReminder.style.top = '-30px';
-        focusReminder.style.left = '0';
-        focusReminder.style.backgroundColor = 'rgba(255, 204, 0, 0.8)';
-        focusReminder.style.padding = '3px 8px';
-        focusReminder.style.borderRadius = '3px';
-        focusReminder.style.fontSize = '12px';
-        focusReminder.style.whiteSpace = 'nowrap';
-        focusReminder.textContent = '點擊羅盤以啟用快捷鍵';
-        focusReminder.style.zIndex = '2147483647';
-        focusReminder.style.pointerEvents = 'none';
-        
+        const focusReminder = window.LuopanUIComponents.createFocusReminder();
         this.container.appendChild(focusReminder);
         
         setTimeout(() => {
