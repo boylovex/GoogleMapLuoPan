@@ -3,8 +3,9 @@ window.LuopanCore.initDebugMode();
 
 // 等待頁面完全載入後再執行
 window.addEventListener('load', () => {
-    window.LuopanCore.debug("Google Map 羅盤插件啟動中...");
-
+    // 初始化核心功能
+    window.LuopanCore.initialize();
+    
     // 控制羅盤顯示/隱藏的變數
     let isVisible = false; // 預設隱藏
     
@@ -53,75 +54,13 @@ window.addEventListener('load', () => {
         blueLineContainer
     );
 
-    // 監視 DOM 變更
-    function setupMutationObserver() {
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                    if (container.style.display === 'block') {
-                        container.style.zIndex = '2147483647';
-                        chrome.runtime.sendMessage({ 
-                            action: 'visibilityChanged', 
-                            isVisible: true 
-                        });
-                    }
-                }
-            }
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['style', 'class']
-        });
-    }
-
-    // 設定觀察者
+    // 設定 DOM 變更監視器
     if (isVisible) {
-        setupMutationObserver();
+        window.LuopanCore.setupMutationObserver(container);
     }
 
-    // 處理來自 popup 的訊息
-    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-        window.LuopanCore.debug('收到訊息:', request);
-        try {
-            switch (request.action) {
-                case 'getVisibility':
-                    sendResponse({ success: true, isVisible: eventHandler.isVisible });
-                    break;
-                case 'toggleVisibility':
-                    eventHandler.toggleVisibility();
-                    sendResponse({ success: true });
-                    break;
-                case 'rotateLuopan':
-                    eventHandler.rotateOverlay(request.degrees);
-                    sendResponse({ success: true });
-                    break;
-                case 'rotateBlueLines':
-                    eventHandler.rotateBlueLines(request.degrees);
-                    sendResponse({ success: true });
-                    break;
-                case 'adjustOpacity':
-                    eventHandler.adjustOpacity(request.delta);
-                    sendResponse({ success: true });
-                    break;
-                case 'clearAllLines':
-                    eventHandler.clearAllLines();
-                    sendResponse({ success: true });
-                    break;
-                case 'zoomLuoPan':
-                    window.LuopanPositionManager.handleZoom(container, request.scale);
-                    sendResponse({ success: true });
-                    break;
-            }
-        } catch (error) {
-            console.error('執行操作失敗:', error);
-            sendResponse({ success: false, error: error.message });
-        }
-        return true;
+    // 監聽擴充功能訊息
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        return window.LuopanCore.handleExtensionMessage(request, sender, sendResponse, eventHandler);
     });
-
-    // 通知擴充功能已就緒
-    chrome.runtime.sendMessage({ action: 'extensionReady' });
 });
